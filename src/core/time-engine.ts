@@ -5,6 +5,32 @@ export function totalInvested(records: InvestmentRecord[]): number {
   return records.reduce((sum, item) => sum + item.hours, 0);
 }
 
+export function dayKey(date: string | Date): string {
+  const value = typeof date === 'string' ? new Date(date) : date;
+  const month = String(value.getMonth() + 1).padStart(2, '0');
+  const day = String(value.getDate()).padStart(2, '0');
+  return `${value.getFullYear()}-${month}-${day}`;
+}
+
+export function investedOn(records: InvestmentRecord[], date: string | Date): number {
+  const key = dayKey(date);
+  const total = records.filter((item) => dayKey(item.date) === key).reduce((sum, item) => sum + item.hours, 0);
+  return Math.round(total * 10) / 10;
+}
+
+export interface DailyBudgetStatus {
+  date: string;
+  invested: number;
+  budget: number;
+  overflow: number;
+}
+
+export function dailyBudgetStatus(records: InvestmentRecord[], account: TimeAccount, date: string | Date): DailyBudgetStatus {
+  const invested = investedOn(records, date);
+  const overflow = Math.max(0, Math.round((invested - account.dailyHours) * 10) / 10);
+  return { date: dayKey(date), invested, budget: account.dailyHours, overflow };
+}
+
 export function metricsFor(records: InvestmentRecord[]): CategoryMetric[] {
   const total = totalInvested(records);
   return CATEGORIES.map((category) => {
